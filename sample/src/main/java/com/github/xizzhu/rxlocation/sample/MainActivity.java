@@ -20,8 +20,10 @@ import android.location.Location;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import com.github.xizzhu.rxlocation.AndroidLocationProvider;
+import com.github.xizzhu.rxlocation.LocationUtils;
 import com.github.xizzhu.rxlocation.PlayServicesLocationProvider;
+import com.github.xizzhu.rxlocation.RxLocation;
+import java.util.concurrent.TimeUnit;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
@@ -35,13 +37,17 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-        new PlayServicesLocationProvider(this).getLastLocation()
+        RxLocation rxLocation = new PlayServicesLocationProvider(this);
+        rxLocation.getLastLocation()
+            .switchIfEmpty(
+                rxLocation.getSingleUpdate(LocationUtils.PRIORITY_BALANCED_POWER_ACCURACY))
+            .timeout(5L, TimeUnit.SECONDS)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(new Subscriber<Location>() {
                 @Override
                 public void onCompleted() {
-                    Log.d(TAG, "PlayServicesLocationProvider.getLastLocation.onCompleted()");
+                    Log.d(TAG, "getLastLocation.onCompleted()");
                 }
 
                 @Override
@@ -51,27 +57,7 @@ public class MainActivity extends AppCompatActivity {
 
                 @Override
                 public void onNext(Location location) {
-                    Log.d(TAG,
-                        "PlayServicesLocationProvider.getLastLocation.onNext(): " + location);
-                }
-            });
-        new AndroidLocationProvider(this).getLastLocation()
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(new Subscriber<Location>() {
-                @Override
-                public void onCompleted() {
-                    Log.d(TAG, "AndroidLocationProvider.getLastLocation.onCompleted()");
-                }
-
-                @Override
-                public void onError(Throwable e) {
-                    e.printStackTrace();
-                }
-
-                @Override
-                public void onNext(Location location) {
-                    Log.d(TAG, "AndroidLocationProvider.getLastLocation.onNext(): " + location);
+                    Log.d(TAG, "getLastLocation.onNext(): " + location);
                 }
             });
     }

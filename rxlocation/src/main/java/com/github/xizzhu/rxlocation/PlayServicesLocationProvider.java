@@ -22,11 +22,12 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import rx.Emitter;
 import rx.Observable;
 import rx.functions.Action1;
-import rx.functions.Cancellable;
 
 public final class PlayServicesLocationProvider implements RxLocation {
     final Context applicationContext;
@@ -58,20 +59,9 @@ public final class PlayServicesLocationProvider implements RxLocation {
                             }
                         }
                     };
-                    final GoogleApiClient googleApiClient =
-                        new GoogleApiClient.Builder(applicationContext, callback, callback).addApi(
-                            LocationServices.API).build();
-                    callback.setGoogleApiClient(googleApiClient);
-                    googleApiClient.connect();
 
-                    emitter.setCancellation(new Cancellable() {
-                        @Override
-                        public void cancel() throws Exception {
-                            if (googleApiClient.isConnected() || googleApiClient.isConnecting()) {
-                                googleApiClient.disconnect();
-                            }
-                        }
-                    });
+                    emitter.setCancellation(new PlayServicesCancellable(
+                        buildGoogleApiClient(applicationContext, callback)));
                 } catch (Throwable e) {
                     emitter.onError(e);
                 }
@@ -79,10 +69,51 @@ public final class PlayServicesLocationProvider implements RxLocation {
         }, Emitter.BackpressureMode.NONE);
     }
 
+    static GoogleApiClient buildGoogleApiClient(Context context, PlayServicesCallback callback) {
+        final GoogleApiClient googleApiClient =
+            new GoogleApiClient.Builder(context, callback, callback).addApi(LocationServices.API)
+                .build();
+        callback.setGoogleApiClient(googleApiClient);
+        googleApiClient.connect();
+        return googleApiClient;
+    }
+
     @NonNull
     @Override
-    public Observable<Location> getSingleUpdate(@LocationUtils.Priority int priority) {
-        // TODO
-        return Observable.empty();
+    public Observable<Location> getSingleUpdate(@LocationUtils.Priority final int priority) {
+        return Observable.fromEmitter(new Action1<Emitter<Location>>() {
+            @Override
+            public void call(final Emitter<Location> emitter) {
+                try {
+                    final LocationListener locationListener = new LocationListener() {
+                        @Override
+                        public void onLocationChanged(Location location) {
+                            emitter.onNext(location);
+                            emitter.onCompleted();
+                        }
+                    };
+
+                    final PlayServicesCallback callback = new PlayServicesCallback(emitter) {
+                        @Override
+                        public void onConnected(@Nullable Bundle connectionHint) {
+                            try {
+                                final LocationRequest locationRequest =
+                                    LocationRequest.create().setNumUpdates(1).setPriority(priority);
+                                //noinspection MissingPermission
+                                LocationServices.FusedLocationApi.requestLocationUpdates(
+                                    googleApiClient, locationRequest, locationListener);
+                            } catch (Throwable e) {
+                                emitter.onError(e);
+                            }
+                        }
+                    };
+
+                    emitter.setCancellation(new PlayServicesCancellable(
+                        buildGoogleApiClient(applicationContext, callback)));
+                } catch (Throwable e) {
+                    emitter.onError(e);
+                }
+            }
+        }, Emitter.BackpressureMode.NONE);
     }
 }
