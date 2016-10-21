@@ -60,4 +60,11 @@ public final class AndroidLocationProvider implements RxLocation {
             }
         }, Emitter.BackpressureMode.NONE);
     }
+
+    @NonNull
+    @Override
+    public Observable<Location> getSingleUpdate(@LocationUtils.Priority int priority) {
+        // TODO
+        return Observable.empty();
+    }
 }

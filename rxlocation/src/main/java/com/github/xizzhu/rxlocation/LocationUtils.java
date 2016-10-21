@@ -18,8 +18,26 @@ package com.github.xizzhu.rxlocation;
 
 import android.location.Location;
 import android.os.Build;
+import android.support.annotation.IntDef;
+import com.google.android.gms.location.LocationRequest;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
-abstract class LocationUtils {
+public abstract class LocationUtils {
+    public static final int PRIORITY_HIGH_ACCURACY = LocationRequest.PRIORITY_HIGH_ACCURACY;
+    public static final int PRIORITY_BALANCED_POWER_ACCURACY =
+        LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY;
+    public static final int PRIORITY_LOW_POWER = LocationRequest.PRIORITY_LOW_POWER;
+    public static final int PRIORITY_NO_POWER = LocationRequest.PRIORITY_NO_POWER;
+
+    @IntDef({
+        PRIORITY_HIGH_ACCURACY, PRIORITY_BALANCED_POWER_ACCURACY, PRIORITY_LOW_POWER,
+        PRIORITY_NO_POWER
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface Priority {
+    }
+
     private static final long FRESHNESS_THRESHOLD_IN_NANOSECONDS = 30000000L; // 30 seconds
 
     /**

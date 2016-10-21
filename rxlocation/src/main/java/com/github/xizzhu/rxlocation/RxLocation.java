@@ -23,4 +23,7 @@ import rx.Observable;
 public interface RxLocation {
     @NonNull
     Observable<Location> getLastLocation();
+
+    @NonNull
+    Observable<Location> getSingleUpdate(@LocationUtils.Priority int priority);
 }
