@@ -43,7 +43,7 @@ public final class PlayServicesLocationProvider implements RxLocation {
             @Override
             public void call(Emitter<Location> emitter) {
                 try {
-                    GoogleApiClientCallback callback = new GoogleApiClientCallback(emitter);
+                    final GoogleApiClientCallback callback = new GoogleApiClientCallback(emitter);
                     final GoogleApiClient googleApiClient =
                         new GoogleApiClient.Builder(applicationContext, callback, callback).addApi(
                             LocationServices.API).build();
