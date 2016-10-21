@@ -1,6 +1,8 @@
 RxLocation
 ==========
 
+Wraps Android location code with RxJava.
+
 License
 -------
     Copyright (C) 2016 Xizhi Zhu
