@@ -16,5 +16,11 @@
 
 package com.github.xizzhu.rxlocation;
 
-public class RxLocation {
+import android.location.Location;
+import android.support.annotation.NonNull;
+import rx.Observable;
+
+public interface RxLocation {
+    @NonNull
+    Observable<Location> getLastLocation();
 }

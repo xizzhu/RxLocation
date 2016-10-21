@@ -16,14 +16,42 @@
 
 package com.github.xizzhu.rxlocation.sample;
 
+import android.location.Location;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import com.github.xizzhu.rxlocation.PlayServicesLocationProvider;
+import com.github.xizzhu.rxlocation.RxLocation;
+import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
+
+        RxLocation rxLocation = new PlayServicesLocationProvider(this);
+        rxLocation.getLastLocation()
+            .subscribeOn(AndroidSchedulers.mainThread())
+            .subscribe(new Subscriber<Location>() {
+                @Override
+                public void onCompleted() {
+                    Log.d(TAG, "getLastLocation.onCompleted()");
+                }
+
+                @Override
+                public void onError(Throwable e) {
+                    e.printStackTrace();
+                }
+
+                @Override
+                public void onNext(Location location) {
+                    Log.d(TAG, "getLastLocation.onNext(): " + location);
+                }
+            });
     }
 }
