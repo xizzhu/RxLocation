@@ -21,7 +21,6 @@ import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 import rx.Emitter;
@@ -43,7 +42,22 @@ public final class PlayServicesLocationProvider implements RxLocation {
             @Override
             public void call(Emitter<Location> emitter) {
                 try {
-                    final GoogleApiClientCallback callback = new GoogleApiClientCallback(emitter);
+                    final PlayServicesCallback callback = new PlayServicesCallback(emitter) {
+                        @Override
+                        public void onConnected(@Nullable Bundle connectionHint) {
+                            try {
+                                @SuppressWarnings("MissingPermission") Location lastLocation =
+                                    LocationServices.FusedLocationApi.getLastLocation(
+                                        googleApiClient);
+                                if (lastLocation != null) {
+                                    emitter.onNext(lastLocation);
+                                }
+                                emitter.onCompleted();
+                            } catch (Throwable e) {
+                                emitter.onError(e);
+                            }
+                        }
+                    };
                     final GoogleApiClient googleApiClient =
                         new GoogleApiClient.Builder(applicationContext, callback, callback).addApi(
                             LocationServices.API).build();
@@ -63,44 +77,5 @@ public final class PlayServicesLocationProvider implements RxLocation {
                 }
             }
         }, Emitter.BackpressureMode.NONE);
-    }
-
-    private static class GoogleApiClientCallback
-        implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
-        private final Emitter<Location> emitter;
-        private GoogleApiClient googleApiClient;
-
-        GoogleApiClientCallback(Emitter<Location> emitter) {
-            this.emitter = emitter;
-        }
-
-        void setGoogleApiClient(GoogleApiClient googleApiClient) {
-            this.googleApiClient = googleApiClient;
-        }
-
-        @Override
-        public void onConnected(@Nullable Bundle connectionHint) {
-            try {
-                @SuppressWarnings("MissingPermission") Location lastLocation =
-                    LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
-                if (lastLocation != null) {
-                    emitter.onNext(lastLocation);
-                }
-                emitter.onCompleted();
-            } catch (Throwable e) {
-                emitter.onError(e);
-            }
-        }
-
-        @Override
-        public void onConnectionSuspended(int cause) {
-            emitter.onError(
-                new IllegalStateException("Connection to Google Play Services suspended"));
-        }
-
-        @Override
-        public void onConnectionFailed(@NonNull ConnectionResult result) {
-            emitter.onError(new IllegalStateException("Connection to Google Play Services failed"));
-        }
     }
 }
