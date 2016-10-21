@@ -20,8 +20,8 @@ import android.location.Location;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import com.github.xizzhu.rxlocation.AndroidLocationProvider;
 import com.github.xizzhu.rxlocation.LocationUtils;
-import com.github.xizzhu.rxlocation.PlayServicesLocationProvider;
 import com.github.xizzhu.rxlocation.RxLocation;
 import java.util.concurrent.TimeUnit;
 import rx.Subscriber;
@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-        RxLocation rxLocation = new PlayServicesLocationProvider(this);
+        RxLocation rxLocation = new AndroidLocationProvider(this);
         rxLocation.getLastLocation()
             .switchIfEmpty(
                 rxLocation.getSingleUpdate(LocationUtils.PRIORITY_BALANCED_POWER_ACCURACY))

@@ -18,7 +18,10 @@ package com.github.xizzhu.rxlocation;
 
 import android.content.Context;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Bundle;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import rx.Emitter;
 import rx.Observable;
@@ -63,8 +66,75 @@ public final class AndroidLocationProvider implements RxLocation {
 
     @NonNull
     @Override
-    public Observable<Location> getSingleUpdate(@LocationUtils.Priority int priority) {
-        // TODO
-        return Observable.empty();
+    public Observable<Location> getSingleUpdate(@LocationUtils.Priority final int priority) {
+        return Observable.fromEmitter(new Action1<Emitter<Location>>() {
+            @Override
+            public void call(final Emitter<Location> emitter) {
+                try {
+                    final LocationManager locationManager =
+                        (LocationManager) applicationContext.getSystemService(
+                            Context.LOCATION_SERVICE);
+                    final LocationListener locationListener = new LocationListener() {
+                        @Override
+                        public void onLocationChanged(Location location) {
+                            try {
+                                //noinspection MissingPermission
+                                locationManager.removeUpdates(this);
+                            } catch (Throwable ignored) {
+                            }
+
+                            emitter.onNext(location);
+                            emitter.onCompleted();
+                        }
+
+                        @Override
+                        public void onStatusChanged(String provider, int status, Bundle extras) {
+                            // do nothing
+                        }
+
+                        @Override
+                        public void onProviderEnabled(String provider) {
+                            // do nothing
+                        }
+
+                        @Override
+                        public void onProviderDisabled(String provider) {
+                            // do nothing
+                        }
+                    };
+
+                    switch (priority) {
+                        case LocationUtils.PRIORITY_HIGH_ACCURACY:
+                            //noinspection MissingPermission
+                            locationManager.requestSingleUpdate(LocationManager.GPS_PROVIDER,
+                                locationListener, Looper.getMainLooper());
+                            break;
+                        case LocationUtils.PRIORITY_BALANCED_POWER_ACCURACY:
+                            //noinspection MissingPermission
+                            locationManager.requestSingleUpdate(LocationManager.GPS_PROVIDER,
+                                locationListener, Looper.getMainLooper());
+                            //noinspection MissingPermission
+                            locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER,
+                                locationListener, Looper.getMainLooper());
+                            break;
+                        case LocationUtils.PRIORITY_LOW_POWER:
+                            //noinspection MissingPermission
+                            locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER,
+                                locationListener, Looper.getMainLooper());
+                            break;
+                        case LocationUtils.PRIORITY_NO_POWER:
+                            //noinspection MissingPermission
+                            locationManager.requestSingleUpdate(LocationManager.PASSIVE_PROVIDER,
+                                locationListener, Looper.getMainLooper());
+                            break;
+                        default:
+                            throw new IllegalArgumentException(
+                                "Unsupported priority - " + priority);
+                    }
+                } catch (Throwable e) {
+                    emitter.onError(e);
+                }
+            }
+        }, Emitter.BackpressureMode.NONE);
     }
 }
