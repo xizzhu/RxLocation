@@ -25,5 +25,5 @@ public interface RxLocation {
     Observable<Location> getLastLocation();
 
     @NonNull
-    Observable<Location> getSingleUpdate(@LocationUtils.Priority int priority);
+    Observable<Location> getLocationUpdates(@NonNull LocationUpdateRequest locationUpdateRequest);
 }

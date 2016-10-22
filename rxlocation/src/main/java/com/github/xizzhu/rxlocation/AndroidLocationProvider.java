@@ -26,6 +26,7 @@ import android.support.annotation.NonNull;
 import rx.Emitter;
 import rx.Observable;
 import rx.functions.Action1;
+import rx.functions.Cancellable;
 
 public final class AndroidLocationProvider implements RxLocation {
     final Context applicationContext;
@@ -66,7 +67,8 @@ public final class AndroidLocationProvider implements RxLocation {
 
     @NonNull
     @Override
-    public Observable<Location> getSingleUpdate(@LocationUtils.Priority final int priority) {
+    public Observable<Location> getLocationUpdates(
+        @NonNull final LocationUpdateRequest locationUpdateRequest) {
         return Observable.fromEmitter(new Action1<Emitter<Location>>() {
             @Override
             public void call(final Emitter<Location> emitter) {
@@ -77,14 +79,7 @@ public final class AndroidLocationProvider implements RxLocation {
                     final LocationListener locationListener = new LocationListener() {
                         @Override
                         public void onLocationChanged(Location location) {
-                            try {
-                                //noinspection MissingPermission
-                                locationManager.removeUpdates(this);
-                            } catch (Throwable ignored) {
-                            }
-
                             emitter.onNext(location);
-                            emitter.onCompleted();
                         }
 
                         @Override
@@ -103,34 +98,44 @@ public final class AndroidLocationProvider implements RxLocation {
                         }
                     };
 
-                    switch (priority) {
-                        case LocationUtils.PRIORITY_HIGH_ACCURACY:
+                    final long minTime = locationUpdateRequest.getIntervalInMillis();
+                    final float minDistance = locationUpdateRequest.getSmallestDistanceInMeters();
+                    switch (locationUpdateRequest.getPriority()) {
+                        case LocationUpdateRequest.PRIORITY_HIGH_ACCURACY:
                             //noinspection MissingPermission
-                            locationManager.requestSingleUpdate(LocationManager.GPS_PROVIDER,
-                                locationListener, Looper.getMainLooper());
+                            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                                minTime, minDistance, locationListener, Looper.getMainLooper());
                             break;
-                        case LocationUtils.PRIORITY_BALANCED_POWER_ACCURACY:
+                        case LocationUpdateRequest.PRIORITY_BALANCED_POWER_ACCURACY:
                             //noinspection MissingPermission
-                            locationManager.requestSingleUpdate(LocationManager.GPS_PROVIDER,
-                                locationListener, Looper.getMainLooper());
+                            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                                minTime, minDistance, locationListener, Looper.getMainLooper());
                             //noinspection MissingPermission
-                            locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER,
-                                locationListener, Looper.getMainLooper());
+                            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
+                                minTime, minDistance, locationListener, Looper.getMainLooper());
                             break;
-                        case LocationUtils.PRIORITY_LOW_POWER:
+                        case LocationUpdateRequest.PRIORITY_LOW_POWER:
                             //noinspection MissingPermission
-                            locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER,
-                                locationListener, Looper.getMainLooper());
+                            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
+                                minTime, minDistance, locationListener, Looper.getMainLooper());
                             break;
-                        case LocationUtils.PRIORITY_NO_POWER:
+                        case LocationUpdateRequest.PRIORITY_NO_POWER:
                             //noinspection MissingPermission
-                            locationManager.requestSingleUpdate(LocationManager.PASSIVE_PROVIDER,
-                                locationListener, Looper.getMainLooper());
+                            locationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER,
+                                minTime, minDistance, locationListener, Looper.getMainLooper());
                             break;
                         default:
                             throw new IllegalArgumentException(
-                                "Unsupported priority - " + priority);
+                                "Unsupported priority - " + locationUpdateRequest.getPriority());
                     }
+
+                    emitter.setCancellation(new Cancellable() {
+                        @Override
+                        public void cancel() throws Exception {
+                            //noinspection MissingPermission
+                            locationManager.removeUpdates(locationListener);
+                        }
+                    });
                 } catch (Throwable e) {
                     emitter.onError(e);
                 }

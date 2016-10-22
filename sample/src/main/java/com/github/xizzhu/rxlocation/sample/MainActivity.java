@@ -20,16 +20,18 @@ import android.location.Location;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import com.github.xizzhu.rxlocation.AndroidLocationProvider;
-import com.github.xizzhu.rxlocation.LocationUtils;
+import com.github.xizzhu.rxlocation.LocationUpdateRequest;
+import com.github.xizzhu.rxlocation.PlayServicesLocationProvider;
 import com.github.xizzhu.rxlocation.RxLocation;
-import java.util.concurrent.TimeUnit;
 import rx.Subscriber;
+import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
+
+    private Subscription subscription;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,17 +39,14 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-        RxLocation rxLocation = new AndroidLocationProvider(this);
-        rxLocation.getLastLocation()
-            .switchIfEmpty(
-                rxLocation.getSingleUpdate(LocationUtils.PRIORITY_BALANCED_POWER_ACCURACY))
-            .timeout(5L, TimeUnit.SECONDS)
+        RxLocation rxLocation = new PlayServicesLocationProvider(this);
+        subscription = rxLocation.getLocationUpdates(new LocationUpdateRequest.Builder().build())
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(new Subscriber<Location>() {
                 @Override
                 public void onCompleted() {
-                    Log.d(TAG, "getLastLocation.onCompleted()");
+                    Log.d(TAG, "getLocationUpdates.onCompleted()");
                 }
 
                 @Override
@@ -57,8 +56,17 @@ public class MainActivity extends AppCompatActivity {
 
                 @Override
                 public void onNext(Location location) {
-                    Log.d(TAG, "getLastLocation.onNext(): " + location);
+                    Log.d(TAG, "getLocationUpdates.onNext(): " + location);
                 }
             });
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (subscription != null) {
+            subscription.unsubscribe();
+            subscription = null;
+        }
+        super.onDestroy();
     }
 }

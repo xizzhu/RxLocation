@@ -80,7 +80,8 @@ public final class PlayServicesLocationProvider implements RxLocation {
 
     @NonNull
     @Override
-    public Observable<Location> getSingleUpdate(@LocationUtils.Priority final int priority) {
+    public Observable<Location> getLocationUpdates(
+        @NonNull final LocationUpdateRequest locationUpdateRequest) {
         return Observable.fromEmitter(new Action1<Emitter<Location>>() {
             @Override
             public void call(final Emitter<Location> emitter) {
@@ -89,7 +90,6 @@ public final class PlayServicesLocationProvider implements RxLocation {
                         @Override
                         public void onLocationChanged(Location location) {
                             emitter.onNext(location);
-                            emitter.onCompleted();
                         }
                     };
 
@@ -97,8 +97,15 @@ public final class PlayServicesLocationProvider implements RxLocation {
                         @Override
                         public void onConnected(@Nullable Bundle connectionHint) {
                             try {
-                                final LocationRequest locationRequest =
-                                    LocationRequest.create().setNumUpdates(1).setPriority(priority);
+                                final LocationRequest locationRequest = LocationRequest.create()
+                                    .setPriority(locationUpdateRequest.getPriority())
+                                    .setInterval(locationUpdateRequest.getIntervalInMillis())
+                                    .setFastestInterval(
+                                        locationUpdateRequest.getFastestIntervalInMillis())
+                                    .setMaxWaitTime(
+                                        locationUpdateRequest.getMaxWaitingTimeInMillis())
+                                    .setSmallestDisplacement(
+                                        locationUpdateRequest.getSmallestDistanceInMeters());
                                 //noinspection MissingPermission
                                 LocationServices.FusedLocationApi.requestLocationUpdates(
                                     googleApiClient, locationRequest, locationListener);
