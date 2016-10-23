@@ -18,18 +18,16 @@ package com.github.xizzhu.rxlocation;
 
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
+import com.google.android.gms.location.LocationRequest;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 public class LocationUpdateRequest {
-    public static final int PRIORITY_HIGH_ACCURACY =
-        com.google.android.gms.location.LocationRequest.PRIORITY_HIGH_ACCURACY;
+    public static final int PRIORITY_HIGH_ACCURACY = LocationRequest.PRIORITY_HIGH_ACCURACY;
     public static final int PRIORITY_BALANCED_POWER_ACCURACY =
-        com.google.android.gms.location.LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY;
-    public static final int PRIORITY_LOW_POWER =
-        com.google.android.gms.location.LocationRequest.PRIORITY_LOW_POWER;
-    public static final int PRIORITY_NO_POWER =
-        com.google.android.gms.location.LocationRequest.PRIORITY_NO_POWER;
+        LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY;
+    public static final int PRIORITY_LOW_POWER = LocationRequest.PRIORITY_LOW_POWER;
+    public static final int PRIORITY_NO_POWER = LocationRequest.PRIORITY_NO_POWER;
 
     @IntDef({
         PRIORITY_HIGH_ACCURACY, PRIORITY_BALANCED_POWER_ACCURACY, PRIORITY_LOW_POWER,
