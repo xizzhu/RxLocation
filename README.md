@@ -1,7 +1,43 @@
 RxLocation
 ==========
 
-Wraps Android location code with RxJava.
+Wraps Android location code with RxJava, supporting both Play Services and platform location provider.
+
+The current version works with [RxJava](https://github.com/ReactiveX/RxJava) 1.2.1 (or higher). If client wants to use the location services from [Play Services](https://developers.google.com/android/guides/overview), version 9.6.1 (or higher) is needed.
+
+How to Use
+----------
+
+### Create Location Provider
+
+````java
+// creates one using Play Services LocationServices
+RxLocationProvider playServicesLocationProvider = new PlayServicesLocationProvider(context);
+
+// creates one using Android platform LocationManager
+RxLocationProvider androidLocationProvider = new AndroidLocationProvider(context);
+````
+
+### Get Last Known Location
+
+````java
+Observable<Location> lastKnownLocationObservable = rxLocationProvider.getLastLocation();
+````
+
+### Get Location Updates
+
+````java
+// this is a direct mapping to Play Services LocationRequest
+LocationUpdateRequest locationUpdateRequest = new LocationUpdateRequest.Builder()
+    .priority(LocationUpdateRequest.PRIORITY_HIGH_ACCURACY)
+    .intervalInMillis(5000L)
+    .fastestIntervalInMillis(1000L) // ignored by AndroidLocationProvider
+    .maxWaitingTimeInMillis(15000L) // ignored by AndroidLocationProvider
+    .smallestDistanceInMeters(10.0F)
+    .build();
+Observable<Location> locationUpdatesObservable
+    = rxLocationProvider.getLocationUpdates(locationUpdateRequest);
+````
 
 License
 -------
