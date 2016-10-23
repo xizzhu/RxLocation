@@ -28,7 +28,7 @@ import rx.Observable;
 import rx.functions.Action1;
 import rx.functions.Cancellable;
 
-public final class AndroidLocationProvider implements RxLocation {
+public final class AndroidLocationProvider implements RxLocationProvider {
     final Context applicationContext;
 
     public AndroidLocationProvider(Context context) {

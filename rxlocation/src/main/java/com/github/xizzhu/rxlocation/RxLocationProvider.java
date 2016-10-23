@@ -20,7 +20,7 @@ import android.location.Location;
 import android.support.annotation.NonNull;
 import rx.Observable;
 
-public interface RxLocation {
+public interface RxLocationProvider {
     @NonNull
     Observable<Location> getLastLocation();
 

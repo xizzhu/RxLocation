@@ -29,7 +29,7 @@ import rx.Emitter;
 import rx.Observable;
 import rx.functions.Action1;
 
-public final class PlayServicesLocationProvider implements RxLocation {
+public final class PlayServicesLocationProvider implements RxLocationProvider {
     final Context applicationContext;
 
     public PlayServicesLocationProvider(Context context) {

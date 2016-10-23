@@ -22,7 +22,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import com.github.xizzhu.rxlocation.LocationUpdateRequest;
 import com.github.xizzhu.rxlocation.PlayServicesLocationProvider;
-import com.github.xizzhu.rxlocation.RxLocation;
+import com.github.xizzhu.rxlocation.RxLocationProvider;
 import rx.Subscriber;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
@@ -39,8 +39,8 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-        RxLocation rxLocation = new PlayServicesLocationProvider(this);
-        subscription = rxLocation.getLocationUpdates(new LocationUpdateRequest.Builder().build())
+        RxLocationProvider rxLocationProvider = new PlayServicesLocationProvider(this);
+        subscription = rxLocationProvider.getLocationUpdates(new LocationUpdateRequest.Builder().build())
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(new Subscriber<Location>() {
