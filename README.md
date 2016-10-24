@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.github.xizzhu:RxLocation:-SNAPSHOT'
+    compile 'com.github.xizzhu:RxLocation:0.1.0'
 }
 ```
 * Maven: Add the following to your `pom.xml`:
@@ -31,7 +31,7 @@ dependencies {
 <dependency>
     <groupId>com.github.xizzhu</groupId>
     <artifactId>RxLocation</artifactId>
-    <version>-SNAPSHOT</version>
+    <version>0.1.0</version>
 </dependency>
 ```
 
