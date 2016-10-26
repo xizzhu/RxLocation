@@ -20,10 +20,9 @@ import android.location.Location;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import com.github.xizzhu.rxlocation.LocationUpdateRequest;
-import com.github.xizzhu.rxlocation.PlayServicesLocationProvider;
+import com.github.xizzhu.rxlocation.AndroidLocationProvider;
 import com.github.xizzhu.rxlocation.RxLocationProvider;
-import rx.Subscriber;
+import rx.SingleSubscriber;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
@@ -39,24 +38,19 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-        RxLocationProvider rxLocationProvider = new PlayServicesLocationProvider(this);
-        subscription = rxLocationProvider.getLocationUpdates(new LocationUpdateRequest.Builder().build())
+        RxLocationProvider rxLocationProvider = new AndroidLocationProvider(this);
+        subscription = rxLocationProvider.getLastLocation()
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(new Subscriber<Location>() {
+            .subscribe(new SingleSubscriber<Location>() {
                 @Override
-                public void onCompleted() {
-                    Log.d(TAG, "getLocationUpdates.onCompleted()");
+                public void onSuccess(Location location) {
+                    Log.d(TAG, "getLastLocation.onSuccess(): " + location);
                 }
 
                 @Override
                 public void onError(Throwable e) {
-                    e.printStackTrace();
-                }
-
-                @Override
-                public void onNext(Location location) {
-                    Log.d(TAG, "getLocationUpdates.onNext(): " + location);
+                    Log.e(TAG, "getLastLocation.onError()", e);
                 }
             });
     }

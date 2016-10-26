@@ -48,7 +48,7 @@ RxLocationProvider androidLocationProvider = new AndroidLocationProvider(context
 ### Get Last Known Location
 
 ````java
-Observable<Location> lastKnownLocationObservable = rxLocationProvider.getLastLocation();
+Single<Location> lastKnownLocationObservable = rxLocationProvider.getLastLocation();
 ````
 
 ### Get Location Updates

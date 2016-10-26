@@ -16,32 +16,13 @@
 
 package com.github.xizzhu.rxlocation;
 
-import android.location.Location;
-import android.support.annotation.NonNull;
-import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import rx.Emitter;
 
 abstract class PlayServicesCallback
     implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
-    final Emitter<Location> emitter;
     GoogleApiClient googleApiClient;
-
-    PlayServicesCallback(Emitter<Location> emitter) {
-        this.emitter = emitter;
-    }
 
     void setGoogleApiClient(GoogleApiClient googleApiClient) {
         this.googleApiClient = googleApiClient;
-    }
-
-    @Override
-    public void onConnectionSuspended(int cause) {
-        emitter.onError(new IllegalStateException("Connection to Google Play Services suspended"));
-    }
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult result) {
-        emitter.onError(new IllegalStateException("Connection to Google Play Services failed"));
     }
 }

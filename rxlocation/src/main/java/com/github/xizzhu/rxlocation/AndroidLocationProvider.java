@@ -25,6 +25,8 @@ import android.os.Looper;
 import android.support.annotation.NonNull;
 import rx.Emitter;
 import rx.Observable;
+import rx.Single;
+import rx.SingleSubscriber;
 import rx.functions.Action1;
 import rx.functions.Cancellable;
 
@@ -37,10 +39,10 @@ public final class AndroidLocationProvider implements RxLocationProvider {
 
     @NonNull
     @Override
-    public Observable<Location> getLastLocation() {
-        return Observable.fromEmitter(new Action1<Emitter<Location>>() {
+    public Single<Location> getLastLocation() {
+        return Single.create(new Single.OnSubscribe<Location>() {
             @Override
-            public void call(Emitter<Location> emitter) {
+            public void call(SingleSubscriber<? super Location> singleSubscriber) {
                 try {
                     final LocationManager locationManager =
                         (LocationManager) applicationContext.getSystemService(
@@ -54,15 +56,16 @@ public final class AndroidLocationProvider implements RxLocationProvider {
                         }
                     }
                     if (bestLocation != null) {
-                        emitter.onNext(bestLocation);
+                        singleSubscriber.onSuccess(bestLocation);
+                    } else {
+                        singleSubscriber.onError(
+                            new IllegalStateException("No last location available"));
                     }
-
-                    emitter.onCompleted();
                 } catch (Throwable e) {
-                    emitter.onError(e);
+                    singleSubscriber.onError(e);
                 }
             }
-        }, Emitter.BackpressureMode.NONE);
+        });
     }
 
     @NonNull

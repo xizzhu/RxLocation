@@ -16,20 +16,24 @@
 
 package com.github.xizzhu.rxlocation;
 
-import com.google.android.gms.common.api.GoogleApiClient;
-import rx.functions.Cancellable;
+import android.support.annotation.NonNull;
+import com.google.android.gms.common.ConnectionResult;
+import rx.Emitter;
 
-class PlayServicesCancellable implements Cancellable {
-    private final GoogleApiClient googleApiClient;
+abstract class PlayServicesEmitterCallback<T> extends PlayServicesCallback {
+    private final Emitter<T> emitter;
 
-    PlayServicesCancellable(GoogleApiClient googleApiClient) {
-        this.googleApiClient = googleApiClient;
+    PlayServicesEmitterCallback(Emitter<T> emitter) {
+        this.emitter = emitter;
     }
 
     @Override
-    public void cancel() throws Exception {
-        if (googleApiClient.isConnected() || googleApiClient.isConnecting()) {
-            googleApiClient.disconnect();
-        }
+    public void onConnectionSuspended(int cause) {
+        emitter.onError(new IllegalStateException("Connection to Google Play Services suspended"));
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult result) {
+        emitter.onError(new IllegalStateException("Connection to Google Play Services failed"));
     }
 }

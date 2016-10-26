@@ -16,15 +16,24 @@
 
 package com.github.xizzhu.rxlocation;
 
-import android.location.Location;
 import android.support.annotation.NonNull;
-import rx.Observable;
-import rx.Single;
+import com.google.android.gms.common.ConnectionResult;
+import rx.SingleSubscriber;
 
-public interface RxLocationProvider {
-    @NonNull
-    Single<Location> getLastLocation();
+abstract class PlayServicesSingleCallback<T> extends PlayServicesCallback {
+    private final SingleSubscriber<? super T> single;
 
-    @NonNull
-    Observable<Location> getLocationUpdates(@NonNull LocationUpdateRequest locationUpdateRequest);
+    PlayServicesSingleCallback(SingleSubscriber<? super T> single) {
+        this.single = single;
+    }
+
+    @Override
+    public void onConnectionSuspended(int cause) {
+        single.onError(new IllegalStateException("Connection to Google Play Services suspended"));
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult result) {
+        single.onError(new IllegalStateException("Connection to Google Play Services failed"));
+    }
 }

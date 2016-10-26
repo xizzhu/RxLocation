@@ -27,7 +27,11 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import rx.Emitter;
 import rx.Observable;
+import rx.Single;
+import rx.SingleSubscriber;
+import rx.Subscription;
 import rx.functions.Action1;
+import rx.functions.Cancellable;
 
 public final class PlayServicesLocationProvider implements RxLocationProvider {
     final Context applicationContext;
@@ -38,35 +42,51 @@ public final class PlayServicesLocationProvider implements RxLocationProvider {
 
     @NonNull
     @Override
-    public Observable<Location> getLastLocation() {
-        return Observable.fromEmitter(new Action1<Emitter<Location>>() {
+    public Single<Location> getLastLocation() {
+        return Single.create(new Single.OnSubscribe<Location>() {
             @Override
-            public void call(Emitter<Location> emitter) {
+            public void call(final SingleSubscriber<? super Location> singleSubscriber) {
                 try {
-                    final PlayServicesCallback callback = new PlayServicesCallback(emitter) {
-                        @Override
-                        public void onConnected(@Nullable Bundle connectionHint) {
-                            try {
-                                @SuppressWarnings("MissingPermission") Location lastLocation =
-                                    LocationServices.FusedLocationApi.getLastLocation(
-                                        googleApiClient);
-                                if (lastLocation != null) {
-                                    emitter.onNext(lastLocation);
+                    final PlayServicesCallback callback =
+                        new PlayServicesSingleCallback<Location>(singleSubscriber) {
+                            @Override
+                            public void onConnected(@Nullable Bundle connectionHint) {
+                                try {
+                                    @SuppressWarnings("MissingPermission") Location lastLocation =
+                                        LocationServices.FusedLocationApi.getLastLocation(
+                                            googleApiClient);
+                                    if (lastLocation != null) {
+                                        singleSubscriber.onSuccess(lastLocation);
+                                    } else {
+                                        singleSubscriber.onError(new IllegalStateException(
+                                            "No last location available"));
+                                    }
+                                } catch (Throwable e) {
+                                    singleSubscriber.onError(e);
                                 }
-                                emitter.onCompleted();
-                            } catch (Throwable e) {
-                                emitter.onError(e);
+                            }
+                        };
+
+                    final GoogleApiClient googleApiClient =
+                        buildGoogleApiClient(applicationContext, callback);
+                    singleSubscriber.add(new Subscription() {
+                        @Override
+                        public void unsubscribe() {
+                            if (googleApiClient.isConnected() || googleApiClient.isConnecting()) {
+                                googleApiClient.disconnect();
                             }
                         }
-                    };
 
-                    emitter.setCancellation(new PlayServicesCancellable(
-                        buildGoogleApiClient(applicationContext, callback)));
+                        @Override
+                        public boolean isUnsubscribed() {
+                            return false;
+                        }
+                    });
                 } catch (Throwable e) {
-                    emitter.onError(e);
+                    singleSubscriber.onError(e);
                 }
             }
-        }, Emitter.BackpressureMode.NONE);
+        });
     }
 
     static GoogleApiClient buildGoogleApiClient(Context context, PlayServicesCallback callback) {
@@ -93,30 +113,39 @@ public final class PlayServicesLocationProvider implements RxLocationProvider {
                         }
                     };
 
-                    final PlayServicesCallback callback = new PlayServicesCallback(emitter) {
+                    final PlayServicesCallback callback =
+                        new PlayServicesEmitterCallback<Location>(emitter) {
+                            @Override
+                            public void onConnected(@Nullable Bundle connectionHint) {
+                                try {
+                                    final LocationRequest locationRequest = LocationRequest.create()
+                                        .setPriority(locationUpdateRequest.getPriority())
+                                        .setInterval(locationUpdateRequest.getIntervalInMillis())
+                                        .setFastestInterval(
+                                            locationUpdateRequest.getFastestIntervalInMillis())
+                                        .setMaxWaitTime(
+                                            locationUpdateRequest.getMaxWaitingTimeInMillis())
+                                        .setSmallestDisplacement(
+                                            locationUpdateRequest.getSmallestDistanceInMeters());
+                                    //noinspection MissingPermission
+                                    LocationServices.FusedLocationApi.requestLocationUpdates(
+                                        googleApiClient, locationRequest, locationListener);
+                                } catch (Throwable e) {
+                                    emitter.onError(e);
+                                }
+                            }
+                        };
+
+                    final GoogleApiClient googleApiClient =
+                        buildGoogleApiClient(applicationContext, callback);
+                    emitter.setCancellation(new Cancellable() {
                         @Override
-                        public void onConnected(@Nullable Bundle connectionHint) {
-                            try {
-                                final LocationRequest locationRequest = LocationRequest.create()
-                                    .setPriority(locationUpdateRequest.getPriority())
-                                    .setInterval(locationUpdateRequest.getIntervalInMillis())
-                                    .setFastestInterval(
-                                        locationUpdateRequest.getFastestIntervalInMillis())
-                                    .setMaxWaitTime(
-                                        locationUpdateRequest.getMaxWaitingTimeInMillis())
-                                    .setSmallestDisplacement(
-                                        locationUpdateRequest.getSmallestDistanceInMeters());
-                                //noinspection MissingPermission
-                                LocationServices.FusedLocationApi.requestLocationUpdates(
-                                    googleApiClient, locationRequest, locationListener);
-                            } catch (Throwable e) {
-                                emitter.onError(e);
+                        public void cancel() throws Exception {
+                            if (googleApiClient.isConnected() || googleApiClient.isConnecting()) {
+                                googleApiClient.disconnect();
                             }
                         }
-                    };
-
-                    emitter.setCancellation(new PlayServicesCancellable(
-                        buildGoogleApiClient(applicationContext, callback)));
+                    });
                 } catch (Throwable e) {
                     emitter.onError(e);
                 }
