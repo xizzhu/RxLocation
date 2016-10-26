@@ -21,7 +21,9 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import com.github.xizzhu.rxlocation.AndroidLocationProvider;
+import com.github.xizzhu.rxlocation.LocationUpdateRequest;
 import com.github.xizzhu.rxlocation.RxLocationProvider;
+import java.util.concurrent.TimeUnit;
 import rx.SingleSubscriber;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
@@ -40,6 +42,10 @@ public class MainActivity extends AppCompatActivity {
 
         RxLocationProvider rxLocationProvider = new AndroidLocationProvider(this);
         subscription = rxLocationProvider.getLastLocation()
+            .onErrorResumeNext(rxLocationProvider.getLocationUpdates(
+                new LocationUpdateRequest.Builder().priority(
+                    LocationUpdateRequest.PRIORITY_HIGH_ACCURACY).build()).toSingle())
+            .timeout(5L, TimeUnit.SECONDS)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(new SingleSubscriber<Location>() {
