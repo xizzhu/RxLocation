@@ -5,7 +5,7 @@ Wraps Android location code with RxJava, supporting both Play Services and platf
 
 [![API](https://img.shields.io/badge/API-9%2B-green.svg?style=flat)](https://developer.android.com/about/versions/android-2.3.html) [![Release](https://img.shields.io/github/release/xizzhu/RxLocation.svg?label=maven central)](https://jitpack.io/#xizzhu/RxLocation)
 
-The current version works with [RxJava](https://github.com/ReactiveX/RxJava) 1.2.1 (or higher). If client wants to use the location services from [Play Services](https://developers.google.com/android/guides/overview), version 9.6.1 (or higher) is needed.
+The current version works with [RxJava](https://github.com/ReactiveX/RxJava) 1.2.1 (or higher). If client wants to use the location services from [Play Services](https://developers.google.com/android/guides/overview), version 9.8.0 (or higher) is needed.
 
 How to Use
 ----------

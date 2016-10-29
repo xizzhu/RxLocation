@@ -20,7 +20,7 @@ ext {
     compileSdkVersion = 25
     buildToolsVersion = '25'
     supportLibraryVersion = '25.0.0'
-    playServicesVersion = '9.6.1'
+    playServicesVersion = '9.8.0'
     rxJavaVersion = '1.2.1'
     rxAndroidVersion = '1.2.1'
 
