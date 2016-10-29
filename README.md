@@ -7,6 +7,8 @@ Wraps Android location code with RxJava, supporting both Play Services and platf
 
 The current version works with [RxJava](https://github.com/ReactiveX/RxJava) 2.0.0 (or higher). If client wants to use the location services from [Play Services](https://developers.google.com/android/guides/overview), version 9.8.0 (or higher) is needed.
 
+If you are still using RxJava 1.x, you can easily use [RxJava2Interop](https://github.com/akarnokd/RxJava2Interop) to convert the types.
+
 How to Use
 ----------
 
