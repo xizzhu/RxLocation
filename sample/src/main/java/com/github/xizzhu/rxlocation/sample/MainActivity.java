@@ -23,16 +23,16 @@ import android.util.Log;
 import com.github.xizzhu.rxlocation.AndroidLocationProvider;
 import com.github.xizzhu.rxlocation.LocationUpdateRequest;
 import com.github.xizzhu.rxlocation.RxLocationProvider;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.observers.DisposableSingleObserver;
+import io.reactivex.schedulers.Schedulers;
 import java.util.concurrent.TimeUnit;
-import rx.SingleSubscriber;
-import rx.Subscription;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
 
-    private Subscription subscription;
+    private Disposable disposable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,14 +41,14 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         RxLocationProvider rxLocationProvider = new AndroidLocationProvider(this);
-        subscription = rxLocationProvider.getLastLocation()
+        disposable = rxLocationProvider.getLastLocation()
             .onErrorResumeNext(rxLocationProvider.getLocationUpdates(
                 new LocationUpdateRequest.Builder().priority(
-                    LocationUpdateRequest.PRIORITY_HIGH_ACCURACY).build()).toSingle())
+                    LocationUpdateRequest.PRIORITY_HIGH_ACCURACY).build()).firstOrError())
             .timeout(5L, TimeUnit.SECONDS)
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(new SingleSubscriber<Location>() {
+            .subscribeWith(new DisposableSingleObserver<Location>() {
                 @Override
                 public void onSuccess(Location location) {
                     Log.d(TAG, "getLastLocation.onSuccess(): " + location);
@@ -63,9 +63,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        if (subscription != null) {
-            subscription.unsubscribe();
-            subscription = null;
+        if (disposable != null) {
+            disposable.dispose();
+            disposable = null;
         }
         super.onDestroy();
     }

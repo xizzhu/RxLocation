@@ -37,6 +37,6 @@ dependencies {
     compile project(':rxlocation')
     compile "com.android.support:appcompat-v7:$rootProject.ext.supportLibraryVersion"
     compile "com.google.android.gms:play-services-location:$rootProject.ext.playServicesVersion"
-    compile "io.reactivex:rxandroid:$rootProject.ext.rxAndroidVersion"
-    compile "io.reactivex:rxjava:$rootProject.ext.rxJavaVersion"
+    compile "io.reactivex.rxjava2:rxandroid:$rootProject.ext.rxAndroidVersion"
+    compile "io.reactivex.rxjava2:rxjava:$rootProject.ext.rxJavaVersion"
 }

@@ -25,13 +25,13 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
-import rx.Emitter;
-import rx.Observable;
-import rx.Single;
-import rx.SingleSubscriber;
-import rx.Subscription;
-import rx.functions.Action1;
-import rx.functions.Cancellable;
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.Single;
+import io.reactivex.SingleEmitter;
+import io.reactivex.SingleOnSubscribe;
+import io.reactivex.disposables.Disposable;
 
 public final class PlayServicesLocationProvider implements RxLocationProvider {
     final Context applicationContext;
@@ -43,12 +43,12 @@ public final class PlayServicesLocationProvider implements RxLocationProvider {
     @NonNull
     @Override
     public Single<Location> getLastLocation() {
-        return Single.create(new Single.OnSubscribe<Location>() {
+        return Single.create(new SingleOnSubscribe<Location>() {
             @Override
-            public void call(final SingleSubscriber<? super Location> singleSubscriber) {
+            public void subscribe(final SingleEmitter<Location> emitter) throws Exception {
                 try {
                     final PlayServicesCallback callback =
-                        new PlayServicesSingleCallback<Location>(singleSubscriber) {
+                        new PlayServicesSingleCallback<Location>(emitter) {
                             @Override
                             public void onConnected(@Nullable Bundle connectionHint) {
                                 try {
@@ -56,34 +56,34 @@ public final class PlayServicesLocationProvider implements RxLocationProvider {
                                         LocationServices.FusedLocationApi.getLastLocation(
                                             googleApiClient);
                                     if (lastLocation != null) {
-                                        singleSubscriber.onSuccess(lastLocation);
+                                        emitter.onSuccess(lastLocation);
                                     } else {
-                                        singleSubscriber.onError(new IllegalStateException(
+                                        emitter.onError(new IllegalStateException(
                                             "No last location available"));
                                     }
                                 } catch (Throwable e) {
-                                    singleSubscriber.onError(e);
+                                    emitter.onError(e);
                                 }
                             }
                         };
 
                     final GoogleApiClient googleApiClient =
                         buildGoogleApiClient(applicationContext, callback);
-                    singleSubscriber.add(new Subscription() {
+                    emitter.setDisposable(new Disposable() {
                         @Override
-                        public void unsubscribe() {
+                        public void dispose() {
                             if (googleApiClient.isConnected() || googleApiClient.isConnecting()) {
                                 googleApiClient.disconnect();
                             }
                         }
 
                         @Override
-                        public boolean isUnsubscribed() {
+                        public boolean isDisposed() {
                             return false;
                         }
                     });
                 } catch (Throwable e) {
-                    singleSubscriber.onError(e);
+                    emitter.onError(e);
                 }
             }
         });
@@ -102,9 +102,9 @@ public final class PlayServicesLocationProvider implements RxLocationProvider {
     @Override
     public Observable<Location> getLocationUpdates(
         @NonNull final LocationUpdateRequest locationUpdateRequest) {
-        return Observable.fromEmitter(new Action1<Emitter<Location>>() {
+        return Observable.create(new ObservableOnSubscribe<Location>() {
             @Override
-            public void call(final Emitter<Location> emitter) {
+            public void subscribe(final ObservableEmitter<Location> emitter) throws Exception {
                 try {
                     final LocationListener locationListener = new LocationListener() {
                         @Override
@@ -138,18 +138,23 @@ public final class PlayServicesLocationProvider implements RxLocationProvider {
 
                     final GoogleApiClient googleApiClient =
                         buildGoogleApiClient(applicationContext, callback);
-                    emitter.setCancellation(new Cancellable() {
+                    emitter.setDisposable(new Disposable() {
                         @Override
-                        public void cancel() throws Exception {
+                        public void dispose() {
                             if (googleApiClient.isConnected() || googleApiClient.isConnecting()) {
                                 googleApiClient.disconnect();
                             }
+                        }
+
+                        @Override
+                        public boolean isDisposed() {
+                            return false;
                         }
                     });
                 } catch (Throwable e) {
                     emitter.onError(e);
                 }
             }
-        }, Emitter.BackpressureMode.NONE);
+        });
     }
 }

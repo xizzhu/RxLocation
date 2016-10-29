@@ -18,12 +18,12 @@ package com.github.xizzhu.rxlocation;
 
 import android.support.annotation.NonNull;
 import com.google.android.gms.common.ConnectionResult;
-import rx.SingleSubscriber;
+import io.reactivex.SingleEmitter;
 
 abstract class PlayServicesSingleCallback<T> extends PlayServicesCallback {
-    private final SingleSubscriber<? super T> single;
+    private final SingleEmitter<T> single;
 
-    PlayServicesSingleCallback(SingleSubscriber<? super T> single) {
+    PlayServicesSingleCallback(SingleEmitter<T> single) {
         this.single = single;
     }
 

@@ -23,12 +23,13 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Looper;
 import android.support.annotation.NonNull;
-import rx.Emitter;
-import rx.Observable;
-import rx.Single;
-import rx.SingleSubscriber;
-import rx.functions.Action1;
-import rx.functions.Cancellable;
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.Single;
+import io.reactivex.SingleEmitter;
+import io.reactivex.SingleOnSubscribe;
+import io.reactivex.disposables.Disposable;
 
 public final class AndroidLocationProvider implements RxLocationProvider {
     final Context applicationContext;
@@ -40,9 +41,9 @@ public final class AndroidLocationProvider implements RxLocationProvider {
     @NonNull
     @Override
     public Single<Location> getLastLocation() {
-        return Single.create(new Single.OnSubscribe<Location>() {
+        return Single.create(new SingleOnSubscribe<Location>() {
             @Override
-            public void call(SingleSubscriber<? super Location> singleSubscriber) {
+            public void subscribe(SingleEmitter<Location> emitter) throws Exception {
                 try {
                     final LocationManager locationManager =
                         (LocationManager) applicationContext.getSystemService(
@@ -56,13 +57,12 @@ public final class AndroidLocationProvider implements RxLocationProvider {
                         }
                     }
                     if (bestLocation != null) {
-                        singleSubscriber.onSuccess(bestLocation);
+                        emitter.onSuccess(bestLocation);
                     } else {
-                        singleSubscriber.onError(
-                            new IllegalStateException("No last location available"));
+                        emitter.onError(new IllegalStateException("No last location available"));
                     }
                 } catch (Throwable e) {
-                    singleSubscriber.onError(e);
+                    emitter.onError(e);
                 }
             }
         });
@@ -72,9 +72,9 @@ public final class AndroidLocationProvider implements RxLocationProvider {
     @Override
     public Observable<Location> getLocationUpdates(
         @NonNull final LocationUpdateRequest locationUpdateRequest) {
-        return Observable.fromEmitter(new Action1<Emitter<Location>>() {
+        return Observable.create(new ObservableOnSubscribe<Location>() {
             @Override
-            public void call(final Emitter<Location> emitter) {
+            public void subscribe(final ObservableEmitter<Location> emitter) throws Exception {
                 try {
                     final LocationManager locationManager =
                         (LocationManager) applicationContext.getSystemService(
@@ -132,17 +132,22 @@ public final class AndroidLocationProvider implements RxLocationProvider {
                                 "Unsupported priority - " + locationUpdateRequest.getPriority());
                     }
 
-                    emitter.setCancellation(new Cancellable() {
+                    emitter.setDisposable(new Disposable() {
                         @Override
-                        public void cancel() throws Exception {
+                        public void dispose() {
                             //noinspection MissingPermission
                             locationManager.removeUpdates(locationListener);
+                        }
+
+                        @Override
+                        public boolean isDisposed() {
+                            return false;
                         }
                     });
                 } catch (Throwable e) {
                     emitter.onError(e);
                 }
             }
-        }, Emitter.BackpressureMode.NONE);
+        });
     }
 }

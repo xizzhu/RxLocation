@@ -18,8 +18,8 @@ package com.github.xizzhu.rxlocation;
 
 import android.location.Location;
 import android.support.annotation.NonNull;
-import rx.Observable;
-import rx.Single;
+import io.reactivex.Observable;
+import io.reactivex.Single;
 
 public interface RxLocationProvider {
     @NonNull

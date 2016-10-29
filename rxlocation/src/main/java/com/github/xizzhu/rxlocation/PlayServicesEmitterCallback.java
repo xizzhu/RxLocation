@@ -18,12 +18,12 @@ package com.github.xizzhu.rxlocation;
 
 import android.support.annotation.NonNull;
 import com.google.android.gms.common.ConnectionResult;
-import rx.Emitter;
+import io.reactivex.ObservableEmitter;
 
 abstract class PlayServicesEmitterCallback<T> extends PlayServicesCallback {
-    private final Emitter<T> emitter;
+    private final ObservableEmitter<T> emitter;
 
-    PlayServicesEmitterCallback(Emitter<T> emitter) {
+    PlayServicesEmitterCallback(ObservableEmitter<T> emitter) {
         this.emitter = emitter;
     }
 

@@ -21,8 +21,8 @@ ext {
     buildToolsVersion = '25'
     supportLibraryVersion = '25.0.0'
     playServicesVersion = '9.8.0'
-    rxJavaVersion = '1.2.1'
-    rxAndroidVersion = '1.2.1'
+    rxJavaVersion = '2.0.0'
+    rxAndroidVersion = '2.0.0'
 
     minSdkVersion = 9
     targetSdkVersion = 25
