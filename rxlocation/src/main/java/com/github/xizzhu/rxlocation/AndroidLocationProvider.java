@@ -32,6 +32,10 @@ import io.reactivex.SingleOnSubscribe;
 import io.reactivex.disposables.Disposable;
 
 public final class AndroidLocationProvider implements RxLocationProvider {
+    private static final float HIGH_ACCURACY_THRESHOLD = 50.0F;
+    private static final float BALANCED_POWER_ACCURACY_THRESHOLD = 100.0F;
+    private static final long BALANCED_POWER_GPS_UPDATE_MIN_TIME_IN_MILLI = 30000L;
+
     final Context applicationContext;
 
     public AndroidLocationProvider(Context context) {
@@ -76,12 +80,17 @@ public final class AndroidLocationProvider implements RxLocationProvider {
             @Override
             public void subscribe(final ObservableEmitter<Location> emitter) throws Exception {
                 try {
-                    final LocationManager locationManager =
-                        (LocationManager) applicationContext.getSystemService(
-                            Context.LOCATION_SERVICE);
+                    final int priority = locationUpdateRequest.getPriority();
                     final LocationListener locationListener = new LocationListener() {
                         @Override
                         public void onLocationChanged(Location location) {
+                            final float accuracy = location.getAccuracy();
+                            if ((priority == LocationUpdateRequest.PRIORITY_HIGH_ACCURACY
+                                && accuracy > HIGH_ACCURACY_THRESHOLD) || (priority
+                                == LocationUpdateRequest.PRIORITY_BALANCED_POWER_ACCURACY
+                                && accuracy > BALANCED_POWER_ACCURACY_THRESHOLD)) {
+                                return;
+                            }
                             emitter.onNext(location);
                         }
 
@@ -101,35 +110,35 @@ public final class AndroidLocationProvider implements RxLocationProvider {
                         }
                     };
 
+                    final LocationManager locationManager =
+                        (LocationManager) applicationContext.getSystemService(
+                            Context.LOCATION_SERVICE);
                     final long minTime = locationUpdateRequest.getIntervalInMillis();
                     final float minDistance = locationUpdateRequest.getSmallestDistanceInMeters();
-                    switch (locationUpdateRequest.getPriority()) {
-                        case LocationUpdateRequest.PRIORITY_HIGH_ACCURACY:
-                            //noinspection MissingPermission
-                            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                                minTime, minDistance, locationListener, Looper.getMainLooper());
-                            break;
-                        case LocationUpdateRequest.PRIORITY_BALANCED_POWER_ACCURACY:
-                            //noinspection MissingPermission
-                            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                                minTime, minDistance, locationListener, Looper.getMainLooper());
-                            //noinspection MissingPermission
-                            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
-                                minTime, minDistance, locationListener, Looper.getMainLooper());
-                            break;
-                        case LocationUpdateRequest.PRIORITY_LOW_POWER:
-                            //noinspection MissingPermission
-                            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
-                                minTime, minDistance, locationListener, Looper.getMainLooper());
-                            break;
-                        case LocationUpdateRequest.PRIORITY_NO_POWER:
-                            //noinspection MissingPermission
-                            locationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER,
-                                minTime, minDistance, locationListener, Looper.getMainLooper());
-                            break;
-                        default:
-                            throw new IllegalArgumentException(
-                                "Unsupported priority - " + locationUpdateRequest.getPriority());
+
+                    // we always use passive provider
+                    //noinspection MissingPermission
+                    locationManager.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER,
+                        minTime, minDistance, locationListener, Looper.getMainLooper());
+
+                    if (priority != LocationUpdateRequest.PRIORITY_NO_POWER) {
+                        // we use network provider, as long as it's not no power mode
+                        //noinspection MissingPermission
+                        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
+                            minTime, minDistance, locationListener, Looper.getMainLooper());
+                    }
+
+                    if (priority == LocationUpdateRequest.PRIORITY_BALANCED_POWER_ACCURACY) {
+                        // for balanced mode, we enabled GPS provider, but less frequently
+                        //noinspection MissingPermission
+                        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                            Math.max(BALANCED_POWER_GPS_UPDATE_MIN_TIME_IN_MILLI, minTime * 2L),
+                            minDistance, locationListener, Looper.getMainLooper());
+                    } else if (priority == LocationUpdateRequest.PRIORITY_HIGH_ACCURACY) {
+                        // for high accuracy mode, we fire GPS as frequently as requested
+                        //noinspection MissingPermission
+                        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                            minTime, minDistance, locationListener, Looper.getMainLooper());
                     }
 
                     emitter.setDisposable(new Disposable() {
