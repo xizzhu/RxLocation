@@ -3,7 +3,8 @@ RxLocation
 
 Wraps Android location code with RxJava, supporting both Play Services and platform location provider.
 
-[![API](https://img.shields.io/badge/API-9%2B-green.svg?style=flat)](https://developer.android.com/about/versions/android-2.3.html) [![Release](https://img.shields.io/github/release/xizzhu/RxLocation.svg?label=maven central)](https://jitpack.io/#xizzhu/RxLocation)
+[![API](https://img.shields.io/badge/API-9%2B-green.svg?style=flat)](https://developer.android.com/about/versions/android-2.3.html)
+[![Release](https://jitpack.io/v/xizzhu/rxlocation.svg)](https://jitpack.io/#xizzhu/RxLocation)
 
 The current version works with [RxJava](https://github.com/ReactiveX/RxJava) 2.0.0 (or higher). If client wants to use the location services from [Play Services](https://developers.google.com/android/guides/overview), version 9.8.0 (or higher) is needed.
 
